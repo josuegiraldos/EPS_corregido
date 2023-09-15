@@ -1,0 +1,53 @@
+use("EPS");
+db.cita.aggregate([
+  {
+    $lookup: {
+      from: "medico",
+      localField: "cit_medico",
+      foreignField: "_id",
+      as: "medico",
+    },
+  },
+  {
+    $lookup: {
+      from: "usuario",
+      localField: "cit_datosUsuario",
+      foreignField: "_id",
+      as: "paciente",
+    },
+  },
+  {
+    $lookup: {
+      from: "consultorio",
+      localField: "medico.med_consultorio",
+      foreignField: "_id",
+      as: "consultorio",
+    },
+  },
+  {
+    $unwind: "$medico",
+  },
+  {
+    $unwind: "$paciente",
+  },
+  {
+    $unwind: "$consultorio",
+  },
+  {
+    $group: {
+      _id: null,
+      citas: {
+        $push: {
+          cit_fecha: "$cit_fecha",
+          medico: "$medico.med_nombreCompleto",
+          nombre: "$paciente.usu_nombre",
+          apellido: "$paciente.usu_primer_apellido",
+          consultorio: "$consultorio.cons_nombre",
+        },
+      },
+    },
+  },
+  {
+    $unwind: "$citas"
+  }
+]).sort( { "citas.cit_fecha": 1 });
