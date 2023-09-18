@@ -2,52 +2,57 @@ use("EPS");
 db.cita.aggregate([
   {
     $lookup: {
-      from: "medico",
-      localField: "cit_medico",
+      from: "estado_cita",
+      localField: "cit_estadoCita",
       foreignField: "_id",
-      as: "medico",
-    },
+      as: "estadoCita"
+    }
   },
   {
     $lookup: {
       from: "usuario",
       localField: "cit_datosUsuario",
       foreignField: "_id",
-      as: "paciente",
-    },
+      as: "usuario"
+    }
   },
   {
     $lookup: {
-      from: "consultorio",
-      localField: "medico.med_consultorio",
+      from: "genero",
+      localField: "usuario.usu_genero",
       foreignField: "_id",
-      as: "consultorio",
-    },
+      as: "genero"
+    } 
   },
   {
-    $unwind: "$medico",
+    $unwind: "$estadoCita",
   },
   {
-    $unwind: "$paciente",
+    $unwind: "$usuario"
   },
   {
-    $unwind: "$consultorio",
+    $unwind: "$genero",
+  },
+  {
+    $match: {
+      "estadoCita.estcita_nombre": /Finalizada/i
+    }
   },
   {
     $group: {
-      _id: null,
-      citas: {
-        $push: {
-          cit_fecha: "$cit_fecha",
-          medico: "$medico.med_nombreCompleto",
-          nombre: "$paciente.usu_nombre",
-          apellido: "$paciente.usu_primer_apellido",
-          consultorio: "$consultorio.cons_nombre",
-        },
-      },
-    },
+      "_id": new ObjectId,
+      "citasXgenero":{
+        $push:{
+          "usuario": "$usuario.usu_nombre",
+          "estadoCita": "$estadoCita.estcita_nombre",
+          "genero": "$genero.gen_nombre"
+        }
+      }
+    }
   },
   {
-    $unwind: "$citas"
+    $project: {
+      "_id": 0,
+    }
   }
-]).sort( { "citas.cit_fecha": 1 });
+]);

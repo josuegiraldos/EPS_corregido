@@ -497,7 +497,7 @@ router.get('/endpoint9', async (req, res) => {
             {
               $group: {
                 _id: new ObjectId,
-                citas: {
+                cita: {
                   $push: {
                     cit_fecha: "$cit_fecha",
                     medico: "$medico.med_nombreCompleto",
@@ -509,9 +509,14 @@ router.get('/endpoint9', async (req, res) => {
               },
             },
             {
-              $unwind: "$citas"
+              $unwind: "$cita"
+            },
+            {
+                $project: {
+                    _id: 0
+                }
             }
-          ]).sort( { "citas.cit_fecha": 1 })
+          ]).sort( { "cita.cit_fecha": 1 })
           .toArray();
 
         if (result.length > 0) {
@@ -527,6 +532,81 @@ router.get('/endpoint9', async (req, res) => {
         client.close();
     } catch (error) {
         console.log(error, "Error endpoint9.");
+    }
+});
+
+router.get('/endpoint10', async (req, res) => {
+    try {
+        const client = new MongoClient(bases);
+        await client.connect();
+        const db = client.db(nombrebase);
+        const collection = db.collection('cita');
+        const query = { cit_medico: new ObjectId('6502fcc9928eaf03e12bd98f')};
+        const citas = await collection.countDocuments(query);
+        const result = await collection.aggregate([
+            {
+                $lookup: {
+                  from: "estado_cita",
+                  localField: "cit_estadoCita",
+                  foreignField: "_id",
+                  as: "estadoCita"
+                }
+              },
+              {
+                $lookup: {
+                  from: "usuario",
+                  localField: "cit_datosUsuario",
+                  foreignField: "_id",
+                  as: "usuario"
+                }
+              },
+              {
+                $lookup: {
+                  from: "genero",
+                  localField: "usuario.usu_genero",
+                  foreignField: "_id",
+                  as: "genero"
+                } 
+              },
+              {
+                $unwind: "$estadoCita",
+              },
+              {
+                $unwind: "$usuario"
+              },
+              {
+                $unwind: "$genero",
+              },
+              {
+                $match: {
+                  "estadoCita.estcita_nombre": /Finalizada/i
+                }
+              },
+              {
+                $group: {
+                  "_id": new ObjectId,
+                  "citasXgenero":{
+                    $push:{
+                      "usuario": "$usuario.usu_nombre",
+                      "estadoCita": "$estadoCita.estcita_nombre",
+                      "genero": "$genero.gen_nombre",
+                    }
+                  }
+                }
+              },
+              {
+                $project: {
+                  "_id": 0,
+                }
+              }
+        ]).toArray();
+        res.json({
+            msg: "Obtener citas de acuerdo al genero y que este 'Finalizada'",
+            citas,
+            result
+        })
+    } catch (error) {
+        console.log(error, "Error endpoint10.");
     }
 });
 
