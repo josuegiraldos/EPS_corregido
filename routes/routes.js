@@ -541,8 +541,6 @@ router.get('/endpoint10', async (req, res) => {
         await client.connect();
         const db = client.db(nombrebase);
         const collection = db.collection('cita');
-        const query = { cit_medico: new ObjectId('6502fcc9928eaf03e12bd98f')};
-        const citas = await collection.countDocuments(query);
         const result = await collection.aggregate([
             {
                 $lookup: {
@@ -591,18 +589,20 @@ router.get('/endpoint10', async (req, res) => {
                       "estadoCita": "$estadoCita.estcita_nombre",
                       "genero": "$genero.gen_nombre",
                     }
+                  },
+                  "total_citas": {
+                    $sum: 1
                   }
                 }
               },
               {
                 $project: {
-                  "_id": 0,
+                  "_id": 0
                 }
               }
         ]).toArray();
         res.json({
             msg: "Obtener citas de acuerdo al genero y que este 'Finalizada'",
-            citas,
             result
         })
     } catch (error) {
