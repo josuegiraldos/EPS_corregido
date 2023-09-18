@@ -585,7 +585,7 @@ router.get('/endpoint10', async (req, res) => {
               {
                 $group: {
                   "_id": new ObjectId,
-                  "citasXgenero":{
+                  "citas_x_genero":{
                     $push:{
                       "usuario": "$usuario.usu_nombre",
                       "estadoCita": "$estadoCita.estcita_nombre",

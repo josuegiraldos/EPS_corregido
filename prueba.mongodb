@@ -41,7 +41,7 @@ db.cita.aggregate([
   {
     $group: {
       "_id": new ObjectId,
-      "citasXgenero":{
+      "citas_x_genero":{
         $push:{
           "usuario": "$usuario.usu_nombre",
           "estadoCita": "$estadoCita.estcita_nombre",
